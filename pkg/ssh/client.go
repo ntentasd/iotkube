@@ -85,6 +85,11 @@ func PrepareNodes(cc *config.ClusterConfig) error {
 		if err != nil {
 			return err
 		}
+
+		err = c.kubeadmInit(cc.Networking.PodCIDR)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -173,7 +178,8 @@ func (c *Client) installKubeadm(version string) error {
 
 	binaries := []string{"kubeadm", "kubelet"}
 	for _, binary := range binaries {
-		exists, err := c.checkFile(binary)
+		// Temporary solution, must fix after binary move
+		exists, err := c.checkFile("/usr/local/bin/" + binary)
 		if err != nil {
 			return err
 		}
@@ -202,4 +208,21 @@ func (c *Client) checkFile(filename string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (c *Client) kubeadmInit(podCidr string) error {
+	password, err := promptSudoPassword()
+	if err != nil {
+		return fmt.Errorf("failed to get password: %w", err)
+	}
+
+	cmd := fmt.Sprintf("sudo -S kubeadm init --pod-network-cidr %s", podCidr)
+	out, err := c.remoteWithSudo(password, cmd)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(out)
+
+	return nil
 }
