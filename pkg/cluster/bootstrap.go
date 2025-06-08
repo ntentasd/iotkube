@@ -6,7 +6,7 @@ import (
 )
 
 func BootstrapCluster(cc *config.ClusterConfig) error {
-	err := ssh.PrepareNodes(cc.Nodes)
+	err := ssh.PrepareNodes(cc)
 	if err != nil {
 		return err
 	}

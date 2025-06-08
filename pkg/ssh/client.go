@@ -14,7 +14,9 @@ type Client struct {
 	client *ssh.Client
 }
 
-func PrepareNodes(nodes []config.NodeConfig) error {
+func PrepareNodes(cc *config.ClusterConfig) error {
+	nodes := cc.Nodes
+
 	for _, node := range nodes {
 		var path string
 
@@ -77,6 +79,11 @@ func PrepareNodes(nodes []config.NodeConfig) error {
 			if err != nil {
 				return err
 			}
+		}
+
+		err = c.installKubeadm(cc.Kubernetes.Version)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -151,4 +158,48 @@ func (c *Client) enablePacketForwarding() error {
 	}
 
 	return nil
+}
+
+func (c *Client) installKubeadm(version string) error {
+	out, err := c.execute("uname -m")
+	if err != nil {
+		return err
+	}
+
+	arch := strings.TrimSpace(string(out))
+	if arch == "aarch64" {
+		arch = "arm64"
+	}
+
+	binaries := []string{"kubeadm", "kubelet"}
+	for _, binary := range binaries {
+		exists, err := c.checkFile(binary)
+		if err != nil {
+			return err
+		}
+		// TODO: Check file execution bit
+		// TODO: Install systemd services for binaries
+		// TODO: Move binaries to appropriate location
+		if !exists {
+			cmd := fmt.Sprintf("wget --quiet --show-progress --https-only --retry-connrefused --waitretry=2 --tries=5 https://dl.k8s.io/release/%s/bin/linux/%s/%s -O %s", version, arch, binary, binary)
+			_, err = c.execute(cmd)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) checkFile(filename string) (bool, error) {
+	_, err := c.execute(fmt.Sprintf("stat %s", filename))
+	if err != nil {
+		if _, ok := err.(*ssh.ExitError); ok {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
 }
