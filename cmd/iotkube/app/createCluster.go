@@ -11,6 +11,7 @@ import (
 
 var (
 	cfgFile          string
+	dryRun           bool
 	createClusterCmd = &cobra.Command{
 		Use:   "create-cluster",
 		Short: "Provision a K8s cluster",
@@ -20,7 +21,7 @@ var (
 				cobra.CheckErr(err)
 			}
 			if fileName == "" {
-				fmt.Fprintln(os.Stderr, "error: --config (-f) flag is required")
+				fmt.Fprintln(os.Stderr, "Error: --config (-f) flag is required")
 				os.Exit(1)
 			}
 
@@ -32,6 +33,11 @@ var (
 			cc, err := config.Parse(file)
 			if err != nil {
 				cobra.CheckErr(err)
+			}
+
+			if dryRun {
+				config.PrintYAML(*cc)
+				return
 			}
 
 			err = cluster.BootstrapCluster(cc)
@@ -47,4 +53,6 @@ var (
 func init() {
 	createClusterCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "IoTKube config file")
 	createClusterCmd.MarkFlagRequired("config")
+
+	createClusterCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Only print the object that would be sent")
 }
