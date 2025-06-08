@@ -44,8 +44,6 @@ var (
 			if err != nil {
 				cobra.CheckErr(err)
 			}
-
-			config.PrintYAML(*cc)
 		},
 	}
 )

@@ -10,6 +10,10 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+type Client struct {
+	client *ssh.Client
+}
+
 func checkNodes(nodes []config.NodeConfig) error {
 	for _, node := range nodes {
 		var path string
@@ -48,8 +52,53 @@ func checkNodes(nodes []config.NodeConfig) error {
 		if err != nil {
 			return err
 		}
+
+		c := NewSess(client)
+
+		hostname, err := c.execute("hostname")
+		if err != nil {
+			return err
+		}
+
+		enabled, err := c.checkSwap()
+		if err != nil {
+			return err
+		}
+		if enabled {
+			fmt.Fprintf(os.Stderr, "Please disable swap on the machine at %s (%s)\n", node.Address,
+				strings.TrimSpace(string(hostname)))
+		}
+
 		defer client.Close()
 	}
 
 	return nil
+}
+
+func NewSess(client *ssh.Client) *Client {
+	return &Client{
+		client,
+	}
+}
+
+func (c *Client) execute(cmd string) ([]byte, error) {
+	session, err := c.client.NewSession()
+	if err != nil {
+		return nil, err
+	}
+
+	return session.Output(cmd)
+}
+
+func (c *Client) checkSwap() (bool, error) {
+	out, err := c.execute("swapon --show")
+	if err != nil {
+		return false, err
+	}
+
+	if len(strings.TrimSpace(string(out))) > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
