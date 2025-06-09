@@ -12,7 +12,7 @@ import (
 var (
 	cfgFile          string
 	dryRun           bool
-	createClusterCmd = &cobra.Command{
+	CreateClusterCmd = &cobra.Command{
 		Use:   "create-cluster",
 		Short: "Provision a K8s cluster",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -49,8 +49,8 @@ var (
 )
 
 func init() {
-	createClusterCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "IoTKube config file")
-	createClusterCmd.MarkFlagRequired("config")
+	CreateClusterCmd.PersistentFlags().StringVarP(&cfgFile, "config", "f", "", "IoTKube config file")
+	CreateClusterCmd.MarkFlagRequired("config")
 
-	createClusterCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Only print the object that would be sent")
+	CreateClusterCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Only print the object that would be sent")
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ntentasd/iotkube/cmd/iotkube/app/install"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +14,8 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(createClusterCmd)
+	rootCmd.AddCommand(CreateClusterCmd)
+	rootCmd.AddCommand(install.InstallCmd)
 }
 
 func Run() {
